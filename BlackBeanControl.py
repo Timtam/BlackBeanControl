@@ -1,9 +1,8 @@
 #!/usr/bin/python
 
-import broadlink, configparser
+import broadlink
 import sys
 import time, binascii
-import Settings
 import netaddr
 import string
 from os import path
@@ -11,12 +10,11 @@ from Crypto.Cipher import AES
 
 from blackbeancontrol import (
   ArgumentParser,
+  Configuration,
+  Device,
   pprint)
 
-SettingsFile = configparser.ConfigParser()
-SettingsFile.optionxform = str
-SettingsFile.read(Settings.BlackBeanControlSettings)
-
+Settings = Configuration()
 SentCommand = ''
 ReKeyCommand = False
 RealCommand = ''
@@ -55,30 +53,10 @@ def discover_action(timeout):
     pprint('\tport: {port}'.format(port = dev.host[1]))
     pprint('\ttimeout: {timeout}'.format(timeout = dev.timeout))
 
-    known = False
+    known = Settings.find_device(host = dev.host[0], port = dev.host[1], mac = str(devmac))
 
-    # check if this device is already known to us
-    for sec in SettingsFile.sections():
-
-      if sec == 'Commands':
-        continue
-
-      try:
-        secmac = netaddr.EUI(SettingsFile[sec]['MACAddress'])
-      except netaddr.core.AddrFormatError:
-        secmac = netaddr.EUI('00:00:00:00:00:00')
-
-      secmac.dialect = netaddr.mac_unix
-
-      if SettingsFile[sec]['IPAddress'] == dev.host[0] and \
-         secmac == devmac and \
-         SettingsFile[sec].getint('Port') == dev.host[1]:
-
-        pprint("\talready known as '{name}'".format(name = sec))
-        known = True
-        break
-    
     if known:
+      pprint("\talready known as '{name}'".format(name = known.name))
       continue
 
     pprint('\tnew device!')
@@ -92,134 +70,51 @@ def discover_action(timeout):
     if not name.strip():
       continue
     
-    if name.strip() in SettingsFile.sections():
+    if Settings.device_exists(name):
       pprint('a device or configuration section with that name already exists')
       continue
     
-    SettingsFile.add_section(name)
-    SettingsFile.set(name, 'MACAddress', str(devmac))
-    SettingsFile.set(name, 'IPAddress', dev.host[0])
-    SettingsFile.set(name, 'Port', str(dev.host[1]))
-    SettingsFile.set(name, 'Timeout', str(dev.timeout))
+    Settings.add_device(Device(
+      name = name,
+      port = dev.host[1],
+      host = dev.host[0],
+      timeout = dev.timeout,
+      mac = str(devmac)
+    ))
 
     pprint("added as new device '{name}'".format(name = name))
-
-  with open(path.join(Settings.ApplicationDir, 'BlackBeanControl.ini'), 'w') as f:
-    SettingsFile.write(f)
 
 # parsing command line arguments
 parser = ArgumentParser()
 result = parser.run()
 
-RealCommand = result['mode']
-
-if RealCommand == 'discover':
+if result['mode'] == 'discover':
   discover_action(result['timeout'])
   sys.exit()
 
-SentCommand = result['command']
-
-DeviceName = result['device']
+ReKeyCommand = False
 #    elif Option in ('-r', '--rekey'):
 #        ReKeyCommand = True
 #        SentCommand = Argument
-AlternativeIPAddress = result['ipaddress']
-AlternativePort = result['port']
-AlternativeMACAddress = result['mac']
-AlternativeTimeout = result['timeout']
 
-if DeviceName.strip() != '':
-    if SettingsFile.has_section(DeviceName.strip()):
-        if SettingsFile.has_option(DeviceName.strip(), 'IPAddress'):
-            DeviceIPAddress = SettingsFile.get(DeviceName.strip(), 'IPAddress')
-        else:
-            DeviceIPAddress = ''
+if result['device'] and not Settings.device_exists(result['device']):
+  print("Device '{name}' does not exist in BlackBeanControl.ini or contains invalid fields".format(name = result['device']))
+  sys.exit(2)
 
-        if SettingsFile.has_option(DeviceName.strip(), 'Port'):
-            DevicePort = SettingsFile.get(DeviceName.strip(), 'Port')
-        else:
-            DevicePort = ''
+device = None
 
-        if SettingsFile.has_option(DeviceName.strip(), 'MACAddress'):
-            DeviceMACAddress = SettingsFile.get(DeviceName.strip(), 'MACAddress')
-        else:
-            DeviceMACAddress = ''
-
-        if SettingsFile.has_option(DeviceName.strip(), 'Timeout'):
-            DeviceTimeout = SettingsFile.get(DeviceName.strip(), 'Timeout')
-        else:
-            DeviceTimeout = ''        
-    else:
-        print('Device does not exist in BlackBeanControl.ini')
-        sys.exit(2)
-
-if (DeviceName.strip() != '') and (DeviceIPAddress.strip() == ''):
-    print('IP address must exist in BlackBeanControl.ini for the selected device')
-    sys.exit(2)
-
-if (DeviceName.strip() != '') and (DevicePort.strip() == ''):
-    print('Port must exist in BlackBeanControl.ini for the selected device')
-    sys.exit(2)
-
-if (DeviceName.strip() != '') and (DeviceMACAddress.strip() == ''):
-    print('MAC address must exist in BlackBeanControl.ini for the selected device')
-    sys.exit(2)
-
-if (DeviceName.strip() != '') and (DeviceTimeout.strip() == ''):
-    print('Timeout must exist in BlackBeanControl.ini for the selected device')
-    sys.exit(2)    
-
-if DeviceName.strip() != '':
-    RealIPAddress = DeviceIPAddress.strip()
-elif AlternativeIPAddress.strip() != '':
-    RealIPAddress = AlternativeIPAddress.strip()
+if result['device']:
+  device = Settings.get_device(result['device'])
 else:
-    RealIPAddress = Settings.IPAddress
+  device = Device(
+    name = 'temporary',
+    port = result['port'],
+    timeout = result['timeout'],
+    mac = result['mac'],
+    host = result['ipaddress']
+  )
 
-if RealIPAddress.strip() == '':
-    print('IP address must exist in BlackBeanControl.ini or it should be entered as a command line parameter')
-    sys.exit(2)
-
-if DeviceName.strip() != '':
-    RealPort = DevicePort.strip()
-elif AlternativePort.strip() != '':
-    RealPort = AlternativePort.strip()
-else:
-    RealPort = Settings.Port
-
-if RealPort.strip() == '':
-    print('Port must exist in BlackBeanControl.ini or it should be entered as a command line parameter')
-    sys.exit(2)
-else:
-    RealPort = int(RealPort.strip())
-
-if DeviceName.strip() != '':
-    RealMACAddress = DeviceMACAddress.strip()
-elif AlternativeMACAddress.strip() != '':
-    RealMACAddress = AlternativeMACAddress.strip()
-else:
-    RealMACAddress = Settings.MACAddress
-
-if RealMACAddress.strip() == '':
-    print('MAC address must exist in BlackBeanControl.ini or it should be entered as a command line parameter')
-    sys.exit(2)
-else:
-    RealMACAddress = netaddr.EUI(RealMACAddress)
-
-if DeviceName.strip() != '':
-    RealTimeout = DeviceTimeout.strip()
-elif AlternativeTimeout.strip() != '':
-    RealTimeout = AlternativeTimeout.strip()
-else:
-    RealTimeout = Settings.Timeout
-
-if RealTimeout.strip() == '':
-    print('Timeout must exist in BlackBeanControl.ini or it should be entered as a command line parameter')
-    sys.exit(2)
-else:
-    RealTimeout = int(RealTimeout.strip())    
-
-RM3Device = broadlink.rm((RealIPAddress, RealPort), RealMACAddress)
+RM3Device = broadlink.rm((device.host, device.port), device.mac)
 RM3Device.auth()
 
 if ReKeyCommand:
@@ -248,6 +143,7 @@ if ReKeyCommand:
         print("Command not found in ini file for re-keying.")
         sys.exit(2)
 
+"""
 if RealCommand == 'n':
     if (len(SentCommand) != 8) or (not all(c in string.hexdigits for c in SentCommand)):
         print('Command must be 4-byte hex number.')
@@ -275,29 +171,25 @@ if RealCommand == 's':
  
     RM3Device.send_data(EncodedCommand.decode('hex'))
     sys.exit()
+"""
 
-
-if SettingsFile.has_option('Commands', SentCommand):
-    CommandFromSettings = SettingsFile.get('Commands', SentCommand)
+if Settings.command_exists(result['command']):
+  command = Settings.get_command(result['command'])
 else:
-    CommandFromSettings = ''
+  command = ''
 
-if CommandFromSettings.strip() != '':
-    DecodedCommand = CommandFromSettings.decode('hex')
-    RM3Device.send_data(DecodedCommand)
+if command:
+  decoded_command = command.decode('hex')
+  RM3Device.send_data(decoded_command)
 else:
-    RM3Device.enter_learning()
-    time.sleep(RealTimeout)
-    LearnedCommand = RM3Device.check_data()
+  RM3Device.enter_learning()
+  time.sleep(result['timeout'])
+  learned_command = RM3Device.check_data()
 
-    if LearnedCommand is None:
-        print('Command not received')
-        sys.exit()
+  if learned_command is None:
+    print('Command not received')
+    sys.exit()
 
-    EncodedCommand = LearnedCommand.encode('hex')
+  encoded_command = learned_command.encode('hex')
 
-    BlackBeanControlIniFile = open(path.join(Settings.ApplicationDir, 'BlackBeanControl.ini'), 'w')    
-    SettingsFile.set('Commands', SentCommand, EncodedCommand)
-    SettingsFile.write(BlackBeanControlIniFile)
-    BlackBeanControlIniFile.close()
-    
+  Settings.add_command(result['command'], encoded_command)
