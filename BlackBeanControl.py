@@ -1,13 +1,15 @@
-#!python2
+#!/usr/bin/python
 
 import broadlink, configparser
-import sys, getopt
+import sys
 import time, binascii
 import netaddr
 import Settings
 import string
 from os import path
 from Crypto.Cipher import AES
+
+from blackbeancontrol import ArgumentParser
 
 SettingsFile = configparser.ConfigParser()
 SettingsFile.optionxform = str
@@ -26,52 +28,21 @@ AlternativePort = ''
 AlternativeMACAddress = ''
 AlternativeTimeout = ''
 
-try:
-    Options, args = getopt.getopt(sys.argv[1:], 'c:n:s:d:r:i:p:m:t:h', ['command=', 'command=', 'command=','device=','rekey=','ipaddress=','port=','macaddress=','timeout=','help'])
-except getopt.GetoptError:
-    print('BlackBeanControl.py -c <Command name> [-d <Device name>] [-i <IP Address>] [-p <Port>] [-m <MAC Address>] [-t <Timeout>] [-r <Re-Key Command>]')
-    sys.exit(2)
+# parsing command line arguments
+parser = ArgumentParser()
+result = parser.run()
 
-for Option, Argument in Options:
-    if Option in ('-h', '--help'):
-        print('BlackBeanControl.py -c <Command name> [-d <Device name>] [-i <IP Address>] [-p <Port>] [-m <MAC Address>] [-t <Timeout> [-r <Re-Key Command>]')
-        print('To control NEC     BlackBeanControl.py -n <Command HEX 4 bytes> [-d <Device name>] [-i <IP Address>] [-p <Port>] [-m <MAC Address>] [-t <Timeout>')
-        print('To control Samsung BlackBeanControl.py -n <Command HEX 6 bytes> [-d <Device name>] [-i <IP Address>] [-p <Port>] [-m <MAC Address>] [-t <Timeout>')
-        sys.exit()
-    elif Option in ('-c', '--command'):
-        RealCommand = 'c'
-        SentCommand = Argument
-    elif Option in ('-n', '--nec'):
-        RealCommand = 'n'
-        SentCommand = Argument
-    elif Option in ('-s', '--samsung'):
-        RealCommand = 's'
-        SentCommand = Argument
-    elif Option in ('-d', '--device'):
-        DeviceName = Argument
-    elif Option in ('-r', '--rekey'):
-        ReKeyCommand = True
-        SentCommand = Argument
-    elif Option in ('-i', '--ipaddress'):
-        AlternativeIPAddress = Argument
-    elif Option in ('-p', '--port'):
-        AlternativePort = Argument
-    elif Option in ('-m', '--macaddress'):
-        AlternativeMACAddress = Argument
-    elif Option in ('-t', '--timeout'):
-        AlternativeTimeout = Argument
+RealCommand = result['mode']
+SentCommand = result['command']
 
-if SentCommand.strip() == '':
-    print('Command name parameter is mandatory')
-    sys.exit(2)
-
-if (DeviceName.strip() != '') and ((AlternativeIPAddress.strip() != '') or (AlternativePort.strip() != '') or (AlternativeMACAddress.strip() != '') or (AlternativeTimeout != '')):
-    print('Device name parameter can not be used in conjunction with IP Address/Port/MAC Address/Timeout parameters')
-    sys.exit(2)
-
-if (((AlternativeIPAddress.strip() != '') or (AlternativePort.strip() != '') or (AlternativeMACAddress.strip() != '') or (AlternativeTimeout.strip() != '')) and ((AlternativeIPAddress.strip() == '') or (AlternativePort.strip() == '') or (AlternativeMACAddress.strip() == '') or (AlternativeTimeout.strip() == ''))):
-    print('IP Address, Port, MAC Address and Timeout parameters can not be used separately')
-    sys.exit(2)
+DeviceName = result['device']
+#    elif Option in ('-r', '--rekey'):
+#        ReKeyCommand = True
+#        SentCommand = Argument
+AlternativeIPAddress = result['ipaddress']
+AlternativePort = result['port']
+AlternativeMACAddress = result['mac']
+AlternativeTimeout = result['timeout']
 
 if DeviceName.strip() != '':
     if SettingsFile.has_section(DeviceName.strip()):
