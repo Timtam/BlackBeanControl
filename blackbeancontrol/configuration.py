@@ -29,12 +29,9 @@ class Configuration:
       
     return devs
   
-  def get_commands(self):
+  def get_command(self, name):
   
-    try:
-      return dict(self._parser['Commands'])
-    except KeyError:
-      return {}
+    return self._parser['Commands'].get(name, None)
 
   def get_device(self, name):
     
@@ -80,7 +77,7 @@ class Configuration:
       return True
 
   def command_exists(self, name):
-    return name in self.get_commands()
+    return name in self._parser['Commands']
 
   def add_command(self, name, code):
   
@@ -92,7 +89,7 @@ class Configuration:
     except configparser.DuplicateSectionError:
       pass
     
-    self._parser['Commands'].set(name, code)
+    self._parser.set('Commands', name, code)
 
     self.save()
     

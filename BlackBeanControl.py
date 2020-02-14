@@ -186,7 +186,7 @@ else:
   command = ''
 
 if command:
-  decoded_command = command.decode('hex')
+  decoded_command = bytes.fromhex(command)
   RM3Device.send_data(decoded_command)
 else:
   RM3Device.enter_learning()
@@ -197,6 +197,6 @@ else:
     print('Command not received')
     sys.exit()
 
-  encoded_command = learned_command.encode('hex')
+  encoded_command = learned_command.hex()
 
   Settings.add_command(result['command'], encoded_command)
