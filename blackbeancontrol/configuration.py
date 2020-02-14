@@ -68,10 +68,10 @@ class Configuration:
       
       self._parser.add_section(device.name)
       
-      self._parser[device.name].set('IPAddress', device.host)
-      self._parser[device.name].set('MACAddress', device.mac)
-      self._parser[device.name].set('Port', str(device.port))
-      self._parser[device.name].set('timeout', str(device.timeout))
+      self._parser.set(device.name, 'IPAddress', device.host)
+      self._parser.set(device.name, 'MACAddress', device.mac)
+      self._parser.set(device.name, 'Port', str(device.port))
+      self._parser.set(device.name, 'timeout', str(device.timeout))
 
       self.save()
 
