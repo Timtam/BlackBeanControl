@@ -66,6 +66,17 @@ class ArgumentParser:
       help='timeout for device actions'
     )
 
+    discovery_parser = subparsers.add_parser(
+      'discover',
+      help='discover all supported devices in your local network'
+    )
+
+    discovery_parser.add_argument(
+      'timeout',
+      type=int,
+      help='timeout when waiting for available devices to show up'
+    )
+
   def run(self):
   
     result = self._parser.parse_args()
@@ -110,6 +121,11 @@ class ArgumentParser:
         res['port'] = result.port
         res['timeout'] = result.timeout
       
+    elif result.subparser_name == 'discover':
+      
+      res['mode'] = 'discover'
+      res['timeout'] = result.timeout
+
     else:
       result = self._parser.parse_args(('--help', ))
       sys.exit(2)

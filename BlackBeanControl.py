@@ -3,13 +3,15 @@
 import broadlink, configparser
 import sys
 import time, binascii
-import netaddr
 import Settings
+import netaddr
 import string
 from os import path
 from Crypto.Cipher import AES
 
-from blackbeancontrol import ArgumentParser
+from blackbeancontrol import (
+  ArgumentParser,
+  pprint)
 
 SettingsFile = configparser.ConfigParser()
 SettingsFile.optionxform = str
@@ -28,11 +30,93 @@ AlternativePort = ''
 AlternativeMACAddress = ''
 AlternativeTimeout = ''
 
+def discover_action(timeout):
+
+  pprint('waiting {seconds} seconds for devices to be discovered...'.format(seconds = timeout))
+  devices = broadlink.discover(timeout)
+
+  pprint('found {amount} devices in your local network'.format(amount = len(devices)))
+  
+  if len(devices) == 0:
+    return
+  
+  for i, dev in enumerate(devices):
+  
+    pprint('device {i}:'.format(i = i + 1))
+
+    # that seems incredibly hackish
+    # I just didn't get the hang of how to transform a byte array into a string representation
+    # guess I will change that later on
+    devmac = netaddr.EUI(':'.join(list(reversed([hex(b)[2:] for b in dev.mac]))))
+    devmac.dialect = netaddr.mac_unix
+
+    pprint('\tip address: {ipaddress}'.format(ipaddress = dev.host[0]))
+    pprint('\tmac address: {macaddress}'.format(macaddress = str(devmac)))
+    pprint('\tport: {port}'.format(port = dev.host[1]))
+    pprint('\ttimeout: {timeout}'.format(timeout = dev.timeout))
+
+    known = False
+
+    # check if this device is already known to us
+    for sec in SettingsFile.sections():
+
+      if sec == 'Commands':
+        continue
+
+      try:
+        secmac = netaddr.EUI(SettingsFile[sec]['MACAddress'])
+      except netaddr.core.AddrFormatError:
+        secmac = netaddr.EUI('00:00:00:00:00:00')
+
+      secmac.dialect = netaddr.mac_unix
+
+      if SettingsFile[sec]['IPAddress'] == dev.host[0] and \
+         secmac == devmac and \
+         SettingsFile[sec].getint('Port') == dev.host[1]:
+
+        pprint("\talready known as '{name}'".format(name = sec))
+        known = True
+        break
+    
+    if known:
+      continue
+
+    pprint('\tnew device!')
+
+    pprint('if you want to add this device to the configuration file, enter a ' +
+           'new name for it now'
+    )
+    
+    name = input('name of the device:')
+    
+    if not name.strip():
+      continue
+    
+    if name.strip() in SettingsFile.sections():
+      pprint('a device or configuration section with that name already exists')
+      continue
+    
+    SettingsFile.add_section(name)
+    SettingsFile.set(name, 'MACAddress', str(devmac))
+    SettingsFile.set(name, 'IPAddress', dev.host[0])
+    SettingsFile.set(name, 'Port', str(dev.host[1]))
+    SettingsFile.set(name, 'Timeout', str(dev.timeout))
+
+    pprint("added as new device '{name}'".format(name = name))
+
+  with open(path.join(Settings.ApplicationDir, 'BlackBeanControl.ini'), 'w') as f:
+    SettingsFile.write(f)
+
 # parsing command line arguments
 parser = ArgumentParser()
 result = parser.run()
 
 RealCommand = result['mode']
+
+if RealCommand == 'discover':
+  discover_action(result['timeout'])
+  sys.exit()
+
 SentCommand = result['command']
 
 DeviceName = result['device']
