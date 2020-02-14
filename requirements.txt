@@ -1,0 +1,4 @@
+broadlink==0.12.0
+configparser==4.0.2
+netaddr==0.7.19
+pycryptodome==3.9.6

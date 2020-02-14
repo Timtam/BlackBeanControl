@@ -194,7 +194,7 @@ if ReKeyCommand:
         sys.exit(2)
 
 if RealCommand == 'n':
-    if (len(SentCommand) <> 8) or (not all(c in string.hexdigits for c in SentCommand)):
+    if (len(SentCommand) != 8) or (not all(c in string.hexdigits for c in SentCommand)):
         print('Command must be 4-byte hex number.')
         sys.exit(2)
 
@@ -208,7 +208,7 @@ if RealCommand == 'n':
     sys.exit()
 
 if RealCommand == 's':
-    if (len(SentCommand) <> 12) or (not all(c in string.hexdigits for c in SentCommand)):
+    if (len(SentCommand) != 12) or (not all(c in string.hexdigits for c in SentCommand)):
         print('Command must be 6-byte hex number.')
         sys.exit(2)
 

@@ -4,30 +4,7 @@ A simple Python 2 script, which uses python-broadlink package. It can be used fo
 
 ### Installation
 
-Before cloning/downloading the script, you should install all dependencies: 
-
-Prerequisites for Linux users:
-
-- Install pip package: 
-      * wget https://bootstrap.pypa.io/get-pip.py 
-      * Run get-pip.py
-- Install python-dev package: apt-get install python-dev
-
-Prerequisites for Windows users:
-
-- Install Microsoft Visual C++ Compiler for Python 2.7
-      * Download https://www.microsoft.com/en-us/download/details.aspx?id=44266
-      * Run VCforPython27.msi
-
-Dependencies for Windows/Linux:
-
-- Install configparser package: python -m pip install configparser
-- Install netaddr package: python -m pip install netaddr
-- Install pycrypto package: python -m pip install pycrypto
-- Download python-broadlink package - you can find it on the github by the package name (github user: mjg59)
-- Unzip it to some local folder and install it: setup.py install
-
-Now you can clone/download BlackBeanControl (in case you download it as archive, unzip it to some local folder).
+After cloning/downloading the script, you should install all dependencies. Just run pip install -r requirements.txt.
 
 ### Configuration
 
