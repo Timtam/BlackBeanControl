@@ -59,6 +59,14 @@ class ArgumentParser:
     )
     
     command_parser.add_argument(
+      '-y',
+      '--type',
+      type=str,
+      default='',
+      help='device type (see either discovery results or python-broadlink package)'
+    )
+
+    command_parser.add_argument(
       '-t',
       '--timeout',
       type=int,
@@ -89,6 +97,7 @@ class ArgumentParser:
       'mac': '',
       'port': -1,
       'timeout': -1,
+      'type': '',
     }
 
     if result.subparser_name == 'command':
@@ -99,18 +108,18 @@ class ArgumentParser:
       if result.device.strip():
         res['device'] = result.device.strip()
       
-        if result.ipaddress.strip() or result.mac.strip() or result.port >= 0 or result.timeout >= 0:
+        if result.type.strip() or result.ipaddress.strip() or result.mac.strip() or result.port >= 0 or result.timeout >= 0:
           pprint('You can only provide either a device name from the ' +
-                 'configuration file or host, mac, port and timeout of a device'
+                 'configuration file or host, mac, port, type and timeout of a device'
           )
         
           sys.exit(2)
         
       else:
       
-        if not result.ipaddress.strip() or not result.mac.strip() or not result.port >= 0 or not result.timeout >= 0:
+        if not result.type.strip() or not result.ipaddress.strip() or not result.mac.strip() or not result.port >= 0 or not result.timeout >= 0:
           pprint('you need to provide either a device name from the ' + 
-                 'configuration file or host, mac address, port and timeout of a ' + 
+                 'configuration file or host, mac address, port, type and timeout of a ' + 
                  'device to use'
           )
           
@@ -120,6 +129,7 @@ class ArgumentParser:
         res['mac'] = result.mac.strip()
         res['port'] = result.port
         res['timeout'] = result.timeout
+        res['type'] = result.type.strip()
       
     elif result.subparser_name == 'discover':
       

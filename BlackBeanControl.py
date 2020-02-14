@@ -114,7 +114,8 @@ else:
       port = result['port'],
       timeout = result['timeout'],
       mac = result['mac'],
-      host = result['ipaddress']
+      host = result['ipaddress'],
+      type = result['type']
     )
   except AttributeError as exc:
     pprint(exc.message)
