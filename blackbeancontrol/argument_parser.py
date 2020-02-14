@@ -30,7 +30,7 @@ class ArgumentParser:
       '-d',
       '--device',
       type=str,
-      default='General',
+      default='',
       help='name of the device to use'
     )
     
@@ -46,7 +46,7 @@ class ArgumentParser:
       '-p',
       '--port',
       type=int,
-      default=-1,
+      default=80,
       help='port to use when connecting to the device'
     )
     
@@ -70,7 +70,7 @@ class ArgumentParser:
       '-t',
       '--timeout',
       type=int,
-      default=-1,
+      default=10,
       help='timeout for device actions'
     )
 
@@ -82,6 +82,7 @@ class ArgumentParser:
     discovery_parser.add_argument(
       'timeout',
       type=int,
+      default=10,
       help='timeout when waiting for available devices to show up'
     )
 
@@ -108,19 +109,23 @@ class ArgumentParser:
       if result.device.strip():
         res['device'] = result.device.strip()
       
-        if result.type.strip() or result.ipaddress.strip() or result.mac.strip() or result.port >= 0 or result.timeout >= 0:
+        if result.type.strip() or result.ipaddress.strip() or result.mac.strip():
           pprint('You can only provide either a device name from the ' +
-                 'configuration file or host, mac, port, type and timeout of a device'
+                 'configuration file or host, mac, type and additional parameters of a device'
           )
         
           sys.exit(2)
         
+      elif not result.mac.strip() and not result.type.strip() and not result.ipaddress.strip():
+      
+        res['device'] = 'General'
+
       else:
       
-        if not result.type.strip() or not result.ipaddress.strip() or not result.mac.strip() or not result.port >= 0 or not result.timeout >= 0:
+        if not result.type.strip() or not result.ipaddress.strip() or not result.mac.strip():
           pprint('you need to provide either a device name from the ' + 
-                 'configuration file or host, mac address, port, type and timeout of a ' + 
-                 'device to use'
+                 'configuration file or host, mac address, type and additional parameters of a ' + 
+                 'device'
           )
           
           sys.exit(2)
