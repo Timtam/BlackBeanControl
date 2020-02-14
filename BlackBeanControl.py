@@ -51,6 +51,7 @@ def discover_action(timeout):
     pprint('\tip address: {ipaddress}'.format(ipaddress = dev.host[0]))
     pprint('\tmac address: {macaddress}'.format(macaddress = str(devmac)))
     pprint('\tport: {port}'.format(port = dev.host[1]))
+    pprint('\tdevice type: {type}'.format(type = hex(dev.devtype)))
     pprint('\ttimeout: {timeout}'.format(timeout = dev.timeout))
 
     known = Settings.find_device(host = dev.host[0], port = dev.host[1], mac = str(devmac))
@@ -79,7 +80,8 @@ def discover_action(timeout):
       port = dev.host[1],
       host = dev.host[0],
       timeout = dev.timeout,
-      mac = str(devmac)
+      mac = str(devmac),
+      type = dev.devtype
     ))
 
     pprint("added as new device '{name}'".format(name = name))
@@ -106,15 +108,19 @@ device = None
 if result['device']:
   device = Settings.get_device(result['device'])
 else:
-  device = Device(
-    name = 'temporary',
-    port = result['port'],
-    timeout = result['timeout'],
-    mac = result['mac'],
-    host = result['ipaddress']
-  )
+  try:
+    device = Device(
+      name = 'temporary',
+      port = result['port'],
+      timeout = result['timeout'],
+      mac = result['mac'],
+      host = result['ipaddress']
+    )
+  except AttributeError as exc:
+    pprint(exc.message)
+    sys.exit(2)
 
-RM3Device = broadlink.rm((device.host, device.port), device.mac)
+RM3Device = broadlink.rm((device.host, device.port), device.mac, device.type)
 RM3Device.auth()
 
 if ReKeyCommand:
@@ -183,7 +189,7 @@ if command:
   RM3Device.send_data(decoded_command)
 else:
   RM3Device.enter_learning()
-  time.sleep(result['timeout'])
+  time.sleep(device.timeout)
   learned_command = RM3Device.check_data()
 
   if learned_command is None:

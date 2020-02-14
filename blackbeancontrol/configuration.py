@@ -45,7 +45,8 @@ class Configuration:
       host = dev.get('IPAddress', ''),
       mac = dev.get('MACAddress', ''),
       port = dev.getint('Port', 80),
-      timeout = dev.getint('Timeout', 10)
+      timeout = dev.getint('Timeout', 10),
+      type = int(dev.get('Type', '0x0'), 16)
     )
   
   def device_exists(self, name):
@@ -71,7 +72,8 @@ class Configuration:
       self._parser.set(device.name, 'IPAddress', device.host)
       self._parser.set(device.name, 'MACAddress', device.mac)
       self._parser.set(device.name, 'Port', str(device.port))
-      self._parser.set(device.name, 'timeout', str(device.timeout))
+      self._parser.set(device.name, 'Timeout', str(device.timeout))
+      self._parser.set(device.name, 'Type', hex(device.type))
 
       self.save()
 
