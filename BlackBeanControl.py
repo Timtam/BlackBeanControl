@@ -15,18 +15,7 @@ from blackbeancontrol import (
   pprint)
 
 Settings = Configuration()
-SentCommand = ''
 ReKeyCommand = False
-RealCommand = ''
-DeviceName=''
-DeviceIPAddress = ''
-DevicePort = ''
-DeviceMACAddres = ''
-DeviceTimeout = ''
-AlternativeIPAddress = ''
-AlternativePort = ''
-AlternativeMACAddress = ''
-AlternativeTimeout = ''
 
 def discover_action(timeout):
 
@@ -180,15 +169,54 @@ if RealCommand == 's':
     sys.exit()
 """
 
-if Settings.command_exists(result['command']):
-  command = Settings.get_command(result['command'])
-else:
-  command = ''
+# validate if all commands are unknown
+# following situations are possible:
+# 1. all string commands are known: send command chain as requested
+# 2. at least one string command is unknown, and more than one command are given: abort with an error message
+# 3. at least one string command is unknown, and only one string command is available: learn that command
 
-if command:
-  decoded_command = bytes.fromhex(command)
-  RM3Device.send_data(decoded_command)
-else:
+cmd_count = 0
+cmd_unknown = []
+
+for i, cmd in enumerate(result['commands']):
+
+  if isinstance(cmd, str):
+
+    cmd_count += 1
+
+    if not Settings.command_exists(cmd):
+      cmd_unknown.append(cmd)
+
+# everything is fine, run the command chain
+if len(cmd_unknown) == 0 and cmd_count > 0:
+
+  for i, cmd in enumerate(result['commands']):
+
+    pprint('command {i}'.format(i = i + 1))
+    if isinstance(cmd, str):
+
+      pprint("\tsending '{name}'...".format(name = cmd))
+
+      decoded_command = bytes.fromhex(Settings.get_command(cmd))
+      RM3Device.send_data(decoded_command)
+    elif isinstance(cmd, int):
+
+      pprint('\tsleeping {time} milliseconds...'.format(time = cmd))
+
+      time.sleep(cmd / 1000)
+
+  pprint('finished sending commands. exiting.')
+
+# more than one command is unknown and multiple commands are specified
+elif len(cmd_unknown) > 0 and cmd_count > 1:
+
+  pprint('the following commands are unknown and cannot be sent: {commands}'.format(commands = ', '.join(cmd_unknown)))
+  sys.exit(2)
+
+elif len(cmd_unknown) == 1 and cmd_count == 1:
+
+  pprint("learning '{cmd}' during the next {time} seconds...".format(cmd = cmd_unknown[0], time = device.timeout))
+
   RM3Device.enter_learning()
   time.sleep(device.timeout)
   learned_command = RM3Device.check_data()
@@ -199,4 +227,6 @@ else:
 
   encoded_command = learned_command.hex()
 
-  Settings.add_command(result['command'], encoded_command)
+  Settings.add_command(cmd_unknown[0], encoded_command)
+
+  pprint('command learned')

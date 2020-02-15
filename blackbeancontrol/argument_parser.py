@@ -22,8 +22,9 @@ class ArgumentParser:
     
     command_parser.add_argument(
       'command',
+      nargs='+',
       type=str,
-      help='name of the command which should be learned/sent'
+      help='commands which should be learned/sent'
     )
     
     command_parser.add_argument(
@@ -92,7 +93,7 @@ class ArgumentParser:
     
     res = {
       'mode': '',
-      'command': '',
+      'commands': [],
       'device': '',
       'ipaddress': '',
       'mac': '',
@@ -104,7 +105,7 @@ class ArgumentParser:
     if result.subparser_name == 'command':
       res['mode'] = 'command'
       
-      res['command'] = result.command.strip()
+      res['commands'] = result.command[:]
 
       if result.device.strip():
         res['device'] = result.device.strip()
@@ -136,6 +137,13 @@ class ArgumentParser:
         res['timeout'] = result.timeout
         res['type'] = result.type.strip()
       
+      for i, cmd in enumerate(res['commands']):
+      
+        try:
+          res['commands'][i] = int(cmd)
+        except ValueError:
+          continue
+
     elif result.subparser_name == 'discover':
       
       res['mode'] = 'discover'

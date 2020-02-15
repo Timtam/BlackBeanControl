@@ -8,6 +8,7 @@ This is a simple Python script, which can be used for both, learning and sending
 
 This version features some improvements from the original BlackBeanControl script. Those are:
 * discovery mode to automatically discover new devices within the local network and add them to the BlackBeanControl.ini file automatically
+* support for command chains to send multiple commands in a row, including idle times in-between
 * Python 3 compatibility
 * support for the newest package versions, especially python-broadlink
 
@@ -68,11 +69,27 @@ Parameters explanation:
 ```
 usage: BlackBeanControl.py command [-h] [-d DEVICE] [-i IPADDRESS] [-p PORT]
                                    [-m MAC] [-y TYPE] [-t TIMEOUT]
-                                   command
+                                   command [command ...]
+
+positional arguments:
+  command               commands which should be learned/sent
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DEVICE, --device DEVICE
+                        name of the device to use
+  -i IPADDRESS, --ipaddress IPADDRESS
+                        ip address of the device which should be used
+  -p PORT, --port PORT  port to use when connecting to the device
+  -m MAC, --mac MAC     mac address of the device
+  -y TYPE, --type TYPE  device type (see either discovery results or python-
+                        broadlink package)
+  -t TIMEOUT, --timeout TIMEOUT
+                        timeout for device actions
 ```
 
 Parameters explanation: 
-- command - mandatory parameter. If the sript is called with a command name not contained in the configuration file (BlackBeanControl.ini), it will start a learning process. After putting RM 3 Mini in the learning state, IR command should be sent to RM 3 Mini (usually a button press on the remote control). When defined timout expires, captured IR command will be saved in the configuration file - in the [Commands] section. In case the script is called with a command name contained in the configuration file, it will send that command to RM 3 Mini.
+- command - at least one command must be specified. If a command with that name is known, this command will be sent to the RM device. If the command is unknown, the device will enter learning mode to read it. Multiple commands can be specified after another to be sent in a command chain. Sleep times can be added in-between as numbers, representing the milliseconds to wait between the consecutive commands.
 - device - optional parameter. If the script is called with Device name parameter, all parameters found in the General section of the configuration file will be ignored, and a script will use parameters found in a device section of the configuration file. Device name parameter can not be used in conjunction with IP Address, MAC Address and Type command line parameters. If no device is specified, the General device will be used instead.
 - IP Address - optional parameter. If the script is called with IP Address parameter, IP address found in the configuration file will be ignored, and a script will use IP address from this parameter.
 - Port - optional parameter. If the script is called with Port parameter, port found in the configuration file will be ignored, and a script will use port from this parameter.
