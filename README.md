@@ -9,6 +9,7 @@ This is a simple Python script, which can be used for both, learning and sending
 This version features some improvements from the original BlackBeanControl script. Those are:
 * discovery mode to automatically discover new devices within the local network and add them to the BlackBeanControl.ini file automatically
 * support for command chains to send multiple commands in a row, including idle times in-between
+* command repeatition to send entire command chains multiple times in a row
 * Python 3 compatibility
 * support for the newest package versions, especially python-broadlink
 
@@ -68,7 +69,7 @@ Parameters explanation:
 ### command mode
 ```
 usage: BlackBeanControl.py command [-h] [-d DEVICE] [-i IPADDRESS] [-p PORT]
-                                   [-m MAC] [-y TYPE] [-t TIMEOUT]
+                                   [-m MAC] [-y TYPE] [-t TIMEOUT] [-e REPEAT]
                                    command [command ...]
 
 positional arguments:
@@ -86,6 +87,9 @@ optional arguments:
                         broadlink package)
   -t TIMEOUT, --timeout TIMEOUT
                         timeout for device actions
+  -e REPEAT, --repeat REPEAT
+                        repeat sending the given commands a given number of
+                        times
 ```
 
 Parameters explanation: 
@@ -96,6 +100,7 @@ Parameters explanation:
 - MAC Address - optional parameter. If the script is called with MAC address parameter, MAC address found in the configuration file will be ignored, and a script will use MAC address from this parameter.
 - Timeout - optional parameter. If the script is called with Timeout parameter, Timeout found in the configuration file will be ignored, and a script will use Timeout from this parameter.
 - Type - optional parameter. If the script is called with Type parameter, type found in the configuration file will be ignored, and a script will use type from this parameter.
+- repeat - optional parameter. This parameter allows to send the entire command chain a given amount of times. Default is 1.
 - Re-Key - optional parameter. This will re-key existing IR data to a new format that does not use the device key for storage. If the data was stored previously with a specific Broadlink device that device name will need to be provided for re-keying by providing a device name using -d parameter.
 
 IP Address, Port, MAC Address and Timeout command line parameters can not be used separately.

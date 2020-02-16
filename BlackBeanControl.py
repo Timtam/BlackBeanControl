@@ -190,7 +190,10 @@ for i, cmd in enumerate(result['commands']):
 # everything is fine, run the command chain
 if len(cmd_unknown) == 0 and cmd_count > 0:
 
-  for i, cmd in enumerate(result['commands']):
+  # consider repeatition
+  commands = result['commands'] * result['repeat']
+  
+  for i, cmd in enumerate(commands):
 
     pprint('command {i}'.format(i = i + 1))
     if isinstance(cmd, str):

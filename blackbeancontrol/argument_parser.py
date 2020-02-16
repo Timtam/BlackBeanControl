@@ -75,6 +75,14 @@ class ArgumentParser:
       help='timeout for device actions'
     )
 
+    command_parser.add_argument(
+      '-e',
+      '--repeat',
+      type=int,
+      default=1,
+      help='repeat sending the given commands a given number of times'
+    )
+
     discovery_parser = subparsers.add_parser(
       'discover',
       help='discover all supported devices in your local network'
@@ -100,12 +108,14 @@ class ArgumentParser:
       'port': -1,
       'timeout': -1,
       'type': '',
+      'repeat': 1,
     }
 
     if result.subparser_name == 'command':
       res['mode'] = 'command'
       
       res['commands'] = result.command[:]
+      res['repeat'] = result.repeat
 
       if result.device.strip():
         res['device'] = result.device.strip()
